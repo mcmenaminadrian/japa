@@ -4,6 +4,7 @@
 
 use namespace std;
 
+static XML_Parser *p_ctrl
 
 void usage()
 {
@@ -18,10 +19,37 @@ void usage()
 }
 
 static void XMLCALL
+referenceHandler(void* data, const XML_Char *name, const XML_Char **attr)
+{
+	Page *addPage = static_cast<Page *>(data);
+	int type = 0;
+	long address;
+	int size;
+	if (strcmp(name, "code") == 0) {
+		addPage->type &= 1;
+	} else {
+		addPage->type &= 2;
+	}
+	for (int i = 0; attr[i]; i+=2) {
+		if (strcmp(attr[i], address) == 0) {
+			address = atol(attr[i + 1]);
+			continue;
+		}
+		if (strcmp(attr[i], size) == 0) {
+			size = atoi(attr[i + 1]);
+		}
+	}
+	for (i = 0; i < size; i++) {
+		addPage->bitmap(i + address) = true;
+	}
+}
+
+
+static void XMLCALL
 intensityHandler(void* data, const XML_Char *name, const XML_Char **attr)
 {
 	long in, out, frame;
-	if (strcmp("name", "page") == 0) {
+	if (strcmp(name, "page") == 0) {
 		for (int i = 0; attr[i]; i+=2) {
 			if (strcmp(attr[i], "frame") == 0) {
 				frame = atol(attr[i + 1]);
@@ -35,8 +63,10 @@ intensityHandler(void* data, const XML_Char *name, const XML_Char **attr)
 				out = atol(attr[i + 1]);
 			}
 		}
+		Page *addPage = new Page(in, out, frame);
 		//set new handler
-
+		XML_SetUserData(p_ctrl, addPage);
+		XML_SetStartElementHandler(p_ctrl, referenceHandler);
 
 int main(int argc, char *argv[])
 {
@@ -67,7 +97,7 @@ int main(int argc, char *argv[])
 
 	xmlFile = argv[argc - 1];
 
-	XML_Parser p_ctrl = XML_ParserCreate("UTF-8");
+	p_ctrl = XML_ParserCreate("UTF-8");
 	if (p_ctrl) {
 		cout << "Could not create XML parser.\n";
 		return 1;

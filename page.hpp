@@ -1,7 +1,10 @@
 #ifndef _PAGE_H_
 #define _PAGE_H_
 
-class page
+
+#define BUFFSZ 1024
+
+class Page
 {
 	protected:
 	const long inTick;
@@ -9,7 +12,7 @@ class page
 	const long pageNumber;
 	const int pageSize
 	std vector<bool> bitmap;
-	const int type; //0 for code, 1 for read-write
+	int type; //1 code, 2 rw, 3 both
 	const int delay;
 
 	double timeRatio;
@@ -17,7 +20,7 @@ class page
 	double breadth;
 
 	public:
-	page(long& in, long& out, long& page, int& pType = 0; int& size=4096):
+	Page(long& in, long& out, long& page, int& pType = 0; int& size=4096):
 		inTick(in), outTick(out), pageNumber(page), type(pType)
 		pageSize(size)
 	{
