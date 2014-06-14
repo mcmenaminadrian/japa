@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 	xmlFile = argv[argc - 1];
 
 	XML_Parser p_ctrl = XML_ParserCreate("UTF-8");
-	if (p_ctrl) {
+	if (!p_ctrl) {
 		cout << "Could not create XML parser.\n";
 		return 1;
 	}
