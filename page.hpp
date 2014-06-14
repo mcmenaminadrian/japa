@@ -18,6 +18,8 @@ class Page
 	double timeRatio;
 	double intensity;
 	double breadth;
+	long idleTime;
+	long lastAccessed;
 
 	public:
 	Page(long& in, long& out, long& page, int& pType = 0; int& size=4096):
@@ -26,6 +28,10 @@ class Page
 	{
 		bitmap(pageSize, false);
 		delay = 100 * pageSize/16;
+		timeRatio = -1;
+		intensity = -1;
+		breadth = -1;
+		lastAccessed = in - delay;
 	}
 
 	const long getIn() const { return inTick; }
@@ -35,6 +41,8 @@ class Page
 	const double getTimeRatio() const { return timeRatio;}
 	const double getIntensity() const { return intensity;}
 	const double getBreadth() const {return breadth;}
+	const long getIdleTime() const {return idleTime;}
+	const double getIdleRatio const { return (out - (in - delay))/idleTime;}
 
 	void markByteUsed(const int byte);
 	const double calculateIntensity();

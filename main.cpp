@@ -1,10 +1,20 @@
 #include <iostream>
+#include <map>
+#include <string>
 #include "page.hpp"
 #include "expat.h"
 
+
+#define OUTLIMIT 100000000
+
 use namespace std;
 
+static long tickCount = OUTLIMIT;
 static XML_Parser *p_ctrl
+static string ticker();
+static multimap<long, Page*> processedPages;
+static void XMLCALL
+closeHandler(void* data, const XML_Char *name);
 
 void usage()
 {
@@ -16,6 +26,16 @@ void usage()
 	cout << "\t-ni\t\tDo not measure intensity\n";
 	cout << "\t-?\t\tShow this usage message\n";
 	return;
+}
+
+		
+
+static void XMLCALL
+tickHandler(void *data, const XML_Char *s, int len)
+{
+	//we add the data here but only process in end handler
+	string addTicker(s, len);
+	ticker += addTicker;
 }
 
 static void XMLCALL
@@ -42,6 +62,7 @@ referenceHandler(void* data, const XML_Char *name, const XML_Char **attr)
 	for (i = 0; i < size; i++) {
 		addPage->bitmap(i + address) = true;
 	}
+	ticker.clear();
 }
 
 
@@ -57,6 +78,10 @@ intensityHandler(void* data, const XML_Char *name, const XML_Char **attr)
 			}
 			if (strcmp(attr[i], "in") == 0) {
 				in = atol(attr[i + 1]);
+				if (in > tickCount) {
+					cout << "Reached tick " << in << "\n";
+					tickCount += OUTLIMIT;
+				}
 				continue;
 			}
 			if (strcmp(attr[i], "out") == 0) {
@@ -64,9 +89,30 @@ intensityHandler(void* data, const XML_Char *name, const XML_Char **attr)
 			}
 		}
 		Page *addPage = new Page(in, out, frame);
-		//set new handler
+		//set new handlers
 		XML_SetUserData(p_ctrl, addPage);
 		XML_SetStartElementHandler(p_ctrl, referenceHandler);
+		XML_SetCharacterDataHandler(p_ctrl, tickHandler);
+}
+
+static void XMLCALL
+closeHandler(void* data, const XML_Char *name)
+{
+	Page *addPage = static_cast<Page *>(data);
+	if (strcmp(name, "code") == 0) || (strcmp(name, "rw") == 0) {
+		long tickTime = atol(ticker.c_str);
+		addPage->idleTime +=
+			idleTime + tickTime - addPage->lastAccessed - 1;
+		addPage->lastAccessed = tickTime;
+	} else if (strcmp(name, "page") == 0) {
+		//add and reset
+		processedPages.insert(
+			pair<long, Page *>(addPage->inTick, addPage));
+		XML_SetStartElementHandler(p_ctrl, intensityHandler);
+		XML_SetCharacterDataHandler(p_ctrl, NULL);
+	}
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -103,8 +149,11 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+
 	if (intensity) {
+		cout << "Starting process\n";
 		XML_SetStartElementHandler(p_ctrl, intensityHandler);
+		XML_SetEndElementHandler(p_ctrl, closeHandler);
 		inXML = fopen(xmlFile, "r");
 		if (!inXML) {
 			cout << "ERROR: could not open ";
@@ -132,6 +181,10 @@ int main(int argc, char *argv[])
 
 	XML_ParserFree(p_ctrl);
 	fclose(inXML);
+
+	//now process the pages
+
+
 
 	return 0;
 }
