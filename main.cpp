@@ -1,17 +1,19 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <vector>
+#include <cstring>
 #include "page.hpp"
-#include "expat.h"
+#include <expat.h>
 
 
 #define OUTLIMIT 100000000
 
-use namespace std;
+using namespace std;
 
 static long tickCount = OUTLIMIT;
-static XML_Parser *p_ctrl
-static string ticker();
+static XML_Parser *pp_ctrl;
+static string ticker;
 static multimap<long, Page*> processedPages;
 static void XMLCALL
 closeHandler(void* data, const XML_Char *name);
@@ -28,39 +30,35 @@ void usage()
 	return;
 }
 
-		
-
 static void XMLCALL
 tickHandler(void *data, const XML_Char *s, int len)
 {
 	//we add the data here but only process in end handler
-	string addTicker(s, len);
-	ticker += addTicker;
+	ticker.append(s, len);
 }
 
 static void XMLCALL
 referenceHandler(void* data, const XML_Char *name, const XML_Char **attr)
 {
 	Page *addPage = static_cast<Page *>(data);
-	int type = 0;
 	long address;
 	int size;
 	if (strcmp(name, "code") == 0) {
-		addPage->type &= 1;
+		addPage->setType(1);
 	} else {
-		addPage->type &= 2;
+		addPage->setType(2);
 	}
 	for (int i = 0; attr[i]; i+=2) {
-		if (strcmp(attr[i], address) == 0) {
+		if (strcmp(attr[i], "address") == 0) {
 			address = atol(attr[i + 1]);
 			continue;
 		}
-		if (strcmp(attr[i], size) == 0) {
+		if (strcmp(attr[i], "size") == 0) {
 			size = atoi(attr[i + 1]);
 		}
 	}
-	for (i = 0; i < size; i++) {
-		addPage->bitmap(i + address) = true;
+	for (int i = 0; i < size; i++) {
+		addPage->markByteUsed(i + address);
 	}
 	ticker.clear();
 }
@@ -90,26 +88,24 @@ intensityHandler(void* data, const XML_Char *name, const XML_Char **attr)
 		}
 		Page *addPage = new Page(in, out, frame);
 		//set new handlers
-		XML_SetUserData(p_ctrl, addPage);
-		XML_SetStartElementHandler(p_ctrl, referenceHandler);
-		XML_SetCharacterDataHandler(p_ctrl, tickHandler);
+		XML_SetUserData(*pp_ctrl, addPage);
+		XML_SetStartElementHandler(*pp_ctrl, referenceHandler);
+		XML_SetCharacterDataHandler(*pp_ctrl, tickHandler);
+	}
 }
 
-static void XMLCALL
-closeHandler(void* data, const XML_Char *name)
+static void XMLCALL closeHandler(void* data, const XML_Char *name)
 {
 	Page *addPage = static_cast<Page *>(data);
-	if (strcmp(name, "code") == 0) || (strcmp(name, "rw") == 0) {
-		long tickTime = atol(ticker.c_str);
-		addPage->idleTime +=
-			idleTime + tickTime - addPage->lastAccessed - 1;
-		addPage->lastAccessed = tickTime;
+	if (strcmp(name, "code") == 0 || strcmp(name, "rw") == 0) {
+		long tickTime = atol(ticker.c_str());
+		addPage->updateIdleTime(tickTime);
 	} else if (strcmp(name, "page") == 0) {
 		//add and reset
 		processedPages.insert(
-			pair<long, Page *>(addPage->inTick, addPage));
-		XML_SetStartElementHandler(p_ctrl, intensityHandler);
-		XML_SetCharacterDataHandler(p_ctrl, NULL);
+			pair<long, Page *>(addPage->getIn(), addPage));
+		XML_SetStartElementHandler(*pp_ctrl, intensityHandler);
+		XML_SetCharacterDataHandler(*pp_ctrl, NULL);
 	}
 }
 
@@ -122,6 +118,7 @@ int main(int argc, char *argv[])
 	FILE *inXML;
 	size_t len = 0;
 	char data[BUFFSZ];
+	int done;
 	
 	if (argc < 2) {
 		usage();
@@ -129,7 +126,7 @@ int main(int argc, char *argv[])
 	}
 
 	for (int i = 1; i < argc; i++) {
-		if ((strcmp(argv[i], "-i") == 0) {
+		if (strcmp(argv[i], "-i") == 0) {
 			intensity = true;
 		}
 		if (strcmp(argv[i], "-ni") == 0) {
@@ -143,12 +140,12 @@ int main(int argc, char *argv[])
 
 	xmlFile = argv[argc - 1];
 
-	p_ctrl = XML_ParserCreate("UTF-8");
+	XML_Parser p_ctrl = XML_ParserCreate("UTF-8");
 	if (p_ctrl) {
 		cout << "Could not create XML parser.\n";
 		return 1;
 	}
-
+	pp_ctrl = &p_ctrl;
 
 	if (intensity) {
 		cout << "Starting process\n";
@@ -166,25 +163,26 @@ int main(int argc, char *argv[])
 			len = fread(data, 1, sizeof(data), inXML);
 			done = len < sizeof(data);
 			if (XML_Parse(p_ctrl, data, len, 0) == 0) {
-				enum XML_Error = XML_GetErrorCode(p_ctrl);
+				enum XML_Error errcode =
+					XML_GetErrorCode(p_ctrl);
 				cout << "ERROR: " << XML_ErrorString(errcode);
 				cout << "\n";
 				cout << "Error at line, column ";
 				cout << XML_GetCurrentLineNumber(p_ctrl);
 				cout << ",";
 				cout << XML_GetCurrentColumnNumber(p_ctrl);
-				cout << XML_ParserFree(p_ctrl) << "\n";
+				cout << "\n";
+				XML_ParserFree(p_ctrl);
 				return 1;
 			}
 		} while(!done);
 	}
 
+	pp_ctrl = NULL;
 	XML_ParserFree(p_ctrl);
 	fclose(inXML);
 
 	//now process the pages
-
-
 
 	return 0;
 }

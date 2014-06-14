@@ -10,10 +10,10 @@ class Page
 	const long inTick;
 	const long outTick;
 	const long pageNumber;
-	const int pageSize
-	std vector<bool> bitmap;
+	const int pageSize;
+	std::vector<bool> bitmap;
 	int type; //1 code, 2 rw, 3 both
-	const int delay;
+	int delay;
 
 	double timeRatio;
 	double intensity;
@@ -22,17 +22,20 @@ class Page
 	long lastAccessed;
 
 	public:
-	Page(long& in, long& out, long& page, int& pType = 0; int& size=4096):
-		inTick(in), outTick(out), pageNumber(page), type(pType)
-		pageSize(size)
+	Page(long in, long out, long page, int size=4096, int pType = 0):
+		inTick(in), outTick(out), pageNumber(page),
+		pageSize(size), type(pType)
 	{
-		bitmap(pageSize, false);
+		bitmap.resize(pageSize, false);
 		delay = 100 * pageSize/16;
 		timeRatio = -1;
 		intensity = -1;
 		breadth = -1;
 		lastAccessed = in - delay;
 	}
+
+	void setType(int ty) { type &= ty; }
+	const int getType() const { return type; }
 
 	const long getIn() const { return inTick; }
 	const long getOut() const { return outTick; }
@@ -42,9 +45,14 @@ class Page
 	const double getIntensity() const { return intensity;}
 	const double getBreadth() const {return breadth;}
 	const long getIdleTime() const {return idleTime;}
-	const double getIdleRatio const { return (out - (in - delay))/idleTime;}
+	const double getIdleRatio() const
+		{ return (outTick - (inTick - delay))/idleTime;}
+	void updateIdleTime(long tickNumber) {
+		idleTime += tickNumber - lastAccessed - 1;
+		lastAccessed = tickNumber;
+	}
 
-	void markByteUsed(const int byte);
+	void markByteUsed(const int byte) { bitmap.at(byte) = true; }
 	const double calculateIntensity();
 	const double calculateTimeRatio();
 	const double calculateBreadth();
