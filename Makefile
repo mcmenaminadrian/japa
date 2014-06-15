@@ -16,7 +16,7 @@ main.o: main.cpp page.hpp
 page.o: page.cpp page.hpp
 	g++ -O2 -o page.o -c -Wall page.cpp
 
-debugjapa: dmain.o
+debugjapa: dmain.o dpage.o
 	g++ -g -o japa -Wall dmain.o dpage.o -lexpat
 
 dmain.o: main.cpp page.hpp
