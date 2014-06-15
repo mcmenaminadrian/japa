@@ -52,7 +52,10 @@ class Page
 		lastAccessed = tickNumber;
 	}
 
-	void markByteUsed(const int byte) { bitmap.at(byte) = true; }
+	void markByteUsed(const long byte) {
+		int offset = byte & 0xFFF;
+		bitmap.at(offset) = true;
+	}
 	const double calculateIntensity();
 	const double calculateTimeRatio();
 	const double calculateBreadth();
