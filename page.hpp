@@ -14,6 +14,7 @@ class Page
 	std::vector<bool> bitmap;
 	int type; //1 code, 2 rw, 3 both
 	int delay;
+	long totalAccess;
 
 	double timeRatio;
 	double intensity;
@@ -32,6 +33,7 @@ class Page
 		intensity = -1;
 		breadth = -1;
 		lastAccessed = in - delay;
+		totalAccess = 0;
 	}
 
 	void setType(int ty) { type &= ty; }
@@ -50,6 +52,7 @@ class Page
 	void updateIdleTime(long tickNumber) {
 		idleTime += tickNumber - lastAccessed - 1;
 		lastAccessed = tickNumber;
+		totalAccess++;
 	}
 
 	void markByteUsed(const long byte) {

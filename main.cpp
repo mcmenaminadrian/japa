@@ -183,6 +183,15 @@ int main(int argc, char *argv[])
 	fclose(inXML);
 
 	//now process the pages
+	multimap<long, Page*>::iterator processIT;
+	for (processIT = processedPages.begin();
+		processIT != processedPages.end(); processIT++) {
+		double intensity = processIT->second->calculateIntensity();
+		double breadth = processIT->second->calculateBreadth();
+		double timeRatio = processIT->second->calculateTimeRatio();
+		cout << "Intensity: " << intensity << " , Breadth: ";
+		cout << breadth << " , Time Ratio: " << timeRatio << "\n";
+	}
 
 	return 0;
 }
