@@ -18,6 +18,8 @@ static string ticker;
 static multimap<long, Page*> processedPages;
 static void XMLCALL
 closeHandler(void* data, const XML_Char *name);
+void* processPages(void* offset);
+
 
 void usage()
 {
@@ -116,7 +118,7 @@ int main(int argc, char *argv[])
 	bool intensity = true; //default use case
 	bool breadth = false;
 	char *xmlFile;
-	FILE *inXML;
+	FILE *inXML = NULL;
 	size_t len = 0;
 	char data[BUFFSZ];
 	int done;
@@ -190,7 +192,7 @@ int main(int argc, char *argv[])
 			(void *)i);
 	}
 	for (int i = 0; i < THREADS; i++) {
-		pthread_join(threadVector.at(i));
+		pthread_join(threadVector.at(i), NULL);
 	}
 	cout << "COMPLETE\n";
 	return 0;
@@ -203,10 +205,12 @@ void* processPages(void* offset)
 	cout << "startOffset is " << startOffset << "\n";
 	//now process the pages
 	multimap<long, Page*>::iterator processIT;
+	for (int i = 0; i < startOffset * mapDivisor; i++) {
+		processIT++;
+	}
 	if (startOffset < THREADS - 1) {
-		for (processIT = processedPages.at(i * mapDivisor);
-		processIT != processedPages.at((i + 1) * mapDivisor);
-		processIT++) {
+		for ( int i = 0; i < mapDivisor; i++)
+		{
 			double intensity =
 				processIT->second->calculateIntensity();
 			double breadth =
@@ -216,10 +220,11 @@ void* processPages(void* offset)
 			cout << "Intensity: " << intensity << " , Breadth: ";
 			cout << breadth << " , Time Ratio: " << timeRatio;
 			cout << "\n";
+			processIT++;
 		}
 	} else {
-		for (processIT = processedPages.at(i * mapDivisor);
-		processIT != processedPages.end(); processIT++) {
+		for (; processIT != processedPages.end(); processIT++)
+		{
 			double intensity =
 				processIT->second->calculateIntensity();
 			double breadth =
@@ -232,5 +237,6 @@ void* processPages(void* offset)
 		}
 
 	}
+	return NULL;
 }
 
