@@ -3,8 +3,9 @@
 #include <string>
 #include <vector>
 #include <cstring>
-#include "page.hpp"
 #include <expat.h>
+#include <pthread.h>
+#include "page.hpp"
 
 
 #define OUTLIMIT 100000000
@@ -181,18 +182,55 @@ int main(int argc, char *argv[])
 	pp_ctrl = NULL;
 	XML_ParserFree(p_ctrl);
 	fclose(inXML);
+	
+	#define THREADS 10
+	vector<pthread_t> threadVector(THREADS);
+	for (int i = 0; i < THREADS; i++) {
+		pthread_create(&threadVector.at(i), NULL, processPages,
+			(void *)i);
+	}
+	for (int i = 0; i < THREADS; i++) {
+		pthread_join(threadVector.at(i));
+	}
+	cout << "COMPLETE\n";
+	return 0;
+}
 
+void* processPages(void* offset)
+{
+	int startOffset = *static_cast<int *>(offset);
+	long mapDivisor = processedPages.size() / THREADS;
+	cout << "startOffset is " << startOffset << "\n";
 	//now process the pages
 	multimap<long, Page*>::iterator processIT;
-	for (processIT = processedPages.begin();
+	if (startOffset < THREADS - 1) {
+		for (processIT = processedPages.at(i * mapDivisor);
+		processIT != processedPages.at((i + 1) * mapDivisor);
+		processIT++) {
+			double intensity =
+				processIT->second->calculateIntensity();
+			double breadth =
+				processIT->second->calculateBreadth();
+			double timeRatio =
+				processIT->second->calculateTimeRatio();
+			cout << "Intensity: " << intensity << " , Breadth: ";
+			cout << breadth << " , Time Ratio: " << timeRatio;
+			cout << "\n";
+		}
+	} else {
+		for (processIT = processedPages.at(i * mapDivisor);
 		processIT != processedPages.end(); processIT++) {
-		double intensity = processIT->second->calculateIntensity();
-		double breadth = processIT->second->calculateBreadth();
-		double timeRatio = processIT->second->calculateTimeRatio();
-		cout << "Intensity: " << intensity << " , Breadth: ";
-		cout << breadth << " , Time Ratio: " << timeRatio << "\n";
-	}
+			double intensity =
+				processIT->second->calculateIntensity();
+			double breadth =
+				processIT->second->calculateBreadth();
+			double timeRatio =
+				processIT->second->calculateTimeRatio();
+			cout << "Intensity: " << intensity << " , Breadth: ";
+			cout << breadth << " , Time Ratio: " << timeRatio;
+			cout << "\n";
+		}
 
-	return 0;
+	}
 }
 
