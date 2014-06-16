@@ -5,19 +5,22 @@ using namespace std;
 
 const double Page::calculateIntensity()
 {
-	intensity = totalAccess/(pageSize * (outTick - (inTick - delay)));
+	double doubleDelay = static_cast<double>(delay)
+	intensity =
+		totalAccess/(pageSize * (outTick - (inTick - doubleDelay)));
 	return intensity;
 }
 
 const double Page::calculateTimeRatio()
 {
-	timeRatio = delay / (outTick - inTick);
+	double doubleDelay = static_cast<double>(delay);
+	timeRatio = (doubleDelay + idleTime) / (outTick - inTick);
 	return timeRatio;
 }
 
 const double Page::calculateBreadth()
 {
-	int bytesUsed = 0;
+	double bytesUsed = 0;
 	for (int i = 0; i < pageSize; i++) {
 		if (bitmap.at(i)) {
 			bytesUsed++;
