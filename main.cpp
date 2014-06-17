@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 	vector<pthread_t> threadVector(THREADS);
 	for (int i = 0; i < THREADS; i++) {
 		pthread_create(&threadVector.at(i), NULL, processPages,
-			(void *)i);
+			&i);
 	}
 	for (int i = 0; i < THREADS; i++) {
 		pthread_join(threadVector.at(i), NULL);
@@ -204,7 +204,7 @@ void* processPages(void* offset)
 	long mapDivisor = processedPages.size() / THREADS;
 	cout << "startOffset is " << startOffset << "\n";
 	//now process the pages
-	multimap<long, Page*>::iterator processIT;
+	multimap<long, Page*>::iterator processIT = processedPages.begin();
 	for (int i = 0; i < startOffset * mapDivisor; i++) {
 		processIT++;
 	}
