@@ -38,6 +38,7 @@ class Page
 
 	void setType(int ty) { type &= ty; }
 	const int getType() const { return type; }
+	const long getPageNumber() const { return pageNumber; }
 
 	const long getIn() const { return inTick; }
 	const long getOut() const { return outTick; }

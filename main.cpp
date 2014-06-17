@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <map>
 #include <string>
 #include <vector>
@@ -116,7 +117,6 @@ static void XMLCALL closeHandler(void* data, const XML_Char *name)
 int main(int argc, char *argv[])
 {
 	bool intensity = true; //default use case
-	bool breadth = false;
 	char *xmlFile;
 	FILE *inXML = NULL;
 	size_t len = 0;
@@ -186,6 +186,7 @@ int main(int argc, char *argv[])
 	fclose(inXML);
 	
 	#define THREADS 10
+	cout << "CREATING THREADS\n";
 	vector<pthread_t> threadVector(THREADS);
 	for (int i = 0; i < THREADS; i++) {
 		pthread_create(&threadVector.at(i), NULL, processPages,
@@ -193,6 +194,19 @@ int main(int argc, char *argv[])
 	}
 	for (int i = 0; i < THREADS; i++) {
 		pthread_join(threadVector.at(i), NULL);
+	}
+	cout << "WRITING OUT RESULT\n";
+	ofstream outFile;
+	outFile.open("outanalysis.csv");
+	multimap<long, Page*>::iterator processIT;
+	for (processIT = processedPages.begin();
+        	processIT != processedPages.end(); processIT++) {
+		outFile << processIT->second->getPageNumber() << ",";
+		outFile << processIT->second->getIn() << ","
+			<< processIT->second->getOut() << ",";
+		outFile << processIT->second->getIntensity() << ",";
+		outFile << processIT->second->getTimeRatio() << ",";
+		outFile << processIT->second->getBreadth() << "\n";
 	}
 	cout << "COMPLETE\n";
 	return 0;
@@ -202,7 +216,6 @@ void* processPages(void* offset)
 {
 	int startOffset = *static_cast<int *>(offset);
 	long mapDivisor = processedPages.size() / THREADS;
-	cout << "startOffset is " << startOffset << "\n";
 	//now process the pages
 	multimap<long, Page*>::iterator processIT = processedPages.begin();
 	for (int i = 0; i < startOffset * mapDivisor; i++) {
@@ -211,29 +224,18 @@ void* processPages(void* offset)
 	if (startOffset < THREADS - 1) {
 		for ( int i = 0; i < mapDivisor; i++)
 		{
-			double intensity =
-				processIT->second->calculateIntensity();
-			double breadth =
-				processIT->second->calculateBreadth();
-			double timeRatio =
-				processIT->second->calculateTimeRatio();
-			cout << "Intensity: " << intensity << " , Breadth: ";
-			cout << breadth << " , Time Ratio: " << timeRatio;
-			cout << "\n";
+
+			processIT->second->calculateIntensity();
+			processIT->second->calculateBreadth();
+			processIT->second->calculateTimeRatio();
 			processIT++;
 		}
 	} else {
 		for (; processIT != processedPages.end(); processIT++)
 		{
-			double intensity =
-				processIT->second->calculateIntensity();
-			double breadth =
-				processIT->second->calculateBreadth();
-			double timeRatio =
-				processIT->second->calculateTimeRatio();
-			cout << "Intensity: " << intensity << " , Breadth: ";
-			cout << breadth << " , Time Ratio: " << timeRatio;
-			cout << "\n";
+			processIT->second->calculateIntensity();
+			processIT->second->calculateBreadth();
+			processIT->second->calculateTimeRatio();
 		}
 
 	}

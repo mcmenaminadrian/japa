@@ -5,7 +5,7 @@ using namespace std;
 
 const double Page::calculateIntensity()
 {
-	double doubleDelay = static_cast<double>(delay)
+	double doubleDelay = static_cast<double>(delay);
 	intensity =
 		totalAccess/(pageSize * (outTick - (inTick - doubleDelay)));
 	return intensity;
