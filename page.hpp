@@ -36,7 +36,7 @@ class Page
 		totalAccess = 0;
 	}
 
-	void setType(int ty) { type &= ty; }
+	void setType(int ty) { type |= ty; }
 	const int getType() const { return type; }
 	const long getPageNumber() const { return pageNumber; }
 
