@@ -189,8 +189,10 @@ int main(int argc, char *argv[])
 	cout << "CREATING THREADS\n";
 	vector<pthread_t> threadVector(THREADS);
 	for (int i = 0; i < THREADS; i++) {
+		int *arg = new int;
+		*arg = i;
 		pthread_create(&threadVector.at(i), NULL, processPages,
-			&i);
+			arg);
 	}
 	for (int i = 0; i < THREADS; i++) {
 		pthread_join(threadVector.at(i), NULL);
@@ -201,11 +203,12 @@ int main(int argc, char *argv[])
 	multimap<long, Page*>::iterator processIT;
 	for (processIT = processedPages.begin();
         	processIT != processedPages.end(); processIT++) {
-		outFile << processIT->second->getPageNumber() << ",";
-		outFile << processIT->second->getIn() << ","
-			<< processIT->second->getOut() << ",";
-		outFile << processIT->second->getIntensity() << ",";
-		outFile << processIT->second->getTimeRatio() << ",";
+		outFile << processIT->second->getPageNumber() << ", ";
+		outFile << processIT->second->getType() << ", ";
+		outFile << processIT->second->getIn() << ", "
+			<< processIT->second->getOut() << ", ";
+		outFile << processIT->second->getIntensity() << ", ";
+		outFile << processIT->second->getTimeRatio() << ", ";
 		outFile << processIT->second->getBreadth() << "\n";
 	}
 	cout << "COMPLETE\n";
@@ -239,6 +242,7 @@ void* processPages(void* offset)
 		}
 
 	}
+	delete (int *)offset;
 	return NULL;
 }
 
