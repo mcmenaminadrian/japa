@@ -6,15 +6,18 @@ using namespace std;
 const double Page::calculateIntensity()
 {
 	double doubleDelay = static_cast<double>(delay);
-	intensity =
-		totalAccess/(pageSize * (outTick - (inTick - doubleDelay)));
+	intensity = totalAccess;
+	double intenseFactor =pageSize * (outTick - (inTick - doubleDelay));
+	intensity /= intenseFactor;
 	return intensity;
 }
 
 const double Page::calculateTimeRatio()
 {
-	double doubleDelay = static_cast<double>(delay);
-	timeRatio = (doubleDelay + idleTime) / (outTick - inTick);
+	idleTime += (outTick - lastAccessed);
+	timeRatio = idleTime;
+	double timeDiff = outTick - (inTick - delay);
+	timeRatio /= timeDiff;
 	return timeRatio;
 }
 
@@ -26,8 +29,15 @@ const double Page::calculateBreadth()
 			bytesUsed++;
 		}
 	}
-	breadth = bytesUsed / pageSize;
+	breadth = bytesUsed; // / pageSize;
 	return breadth;
 }
+
+void Page::updateIdleTime(long tickNumber) {
+	idleTime += ((tickNumber - 1) - lastAccessed);
+	lastAccessed = tickNumber;
+	totalAccess++;
+}
+
 
 

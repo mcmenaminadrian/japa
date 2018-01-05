@@ -13,7 +13,7 @@ class Page
 	const int pageSize;
 	std::vector<bool> bitmap;
 	int type; //1 code, 2 rw, 3 both
-	int delay;
+	double delay;
 	long totalAccess;
 
 	double timeRatio;
@@ -29,11 +29,12 @@ class Page
 	{
 		bitmap.resize(pageSize, false);
 		delay = 100 * pageSize/16;
-		timeRatio = -1;
-		intensity = -1;
-		breadth = -1;
+		timeRatio = 0;
+		intensity = 0;
+		breadth = 0;
 		lastAccessed = in - delay;
 		totalAccess = 0;
+		idleTime = 0;
 	}
 
 	void setType(int ty) { type |= ty; }
@@ -50,14 +51,9 @@ class Page
 	const long getIdleTime() const {return idleTime;}
 	const double getIdleRatio() const
 		{ return (outTick - (inTick - delay))/idleTime;}
-	void updateIdleTime(long tickNumber) {
-		idleTime += tickNumber - lastAccessed - 1;
-		lastAccessed = tickNumber;
-		totalAccess++;
-	}
-
-	void markByteUsed(const long byte) {
-		int offset = byte & 0xFFF;
+	void updateIdleTime(long tickNumber);
+	void markByteUsed(const long byteIn) {
+		long offset = byteIn & 0xFFF;
 		bitmap.at(offset) = true;
 	}
 	const double calculateIntensity();
